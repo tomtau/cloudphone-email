@@ -65,6 +65,20 @@ const config = ({
       loader: async () => (
         await import('./es/about.json')
       ).default,
+    },
+    {
+      locale: 'en',
+      key: 'email',
+      loader: async () => (
+        await import('./en/email.json')
+      ).default,
+    },
+    {
+      locale: 'es',
+      key: 'email',
+      loader: async () => (
+        await import('./es/email.json')
+      ).default,
     }
   ],
 });
