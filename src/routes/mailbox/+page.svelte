@@ -2,6 +2,7 @@
   import { goto } from '$app/navigation';
   import { base } from '$app/paths';
   import { page } from '$app/stores';
+  import { onDestroy } from 'svelte';
   import { t } from '$lib/translations';
   import { currentProvider, currentEmails, loading } from '$lib/email/store';
   import Header from '../../components/Header.svelte';
@@ -18,20 +19,26 @@
   let hasMore = $state(false);
   let currentPage = $state(0);
 
-  currentProvider.subscribe((p) => {
+  const unsubProvider = currentProvider.subscribe((p) => {
     provider = p;
   });
 
-  currentEmails.subscribe((e) => {
+  const unsubEmails = currentEmails.subscribe((e) => {
     emails = e;
   });
 
-  page.subscribe(($page) => {
+  const unsubPage = page.subscribe(($page) => {
     mailboxId = $page.url.searchParams.get('id') || '';
     mailboxName = $page.url.searchParams.get('name') || '';
     if (mailboxId) {
       loadEmails();
     }
+  });
+
+  onDestroy(() => {
+    unsubProvider();
+    unsubEmails();
+    unsubPage();
   });
 
   async function loadEmails() {

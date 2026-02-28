@@ -1,6 +1,7 @@
 <script>
   import { goto } from '$app/navigation';
   import { base } from '$app/paths';
+  import { onDestroy } from 'svelte';
   import { t } from '$lib/translations';
   import { currentProvider, loading } from '$lib/email/store';
   import Header from '../../components/Header.svelte';
@@ -14,8 +15,12 @@
   let hasSearched = $state(false);
   let searchInput;
 
-  currentProvider.subscribe((p) => {
+  const unsubProvider = currentProvider.subscribe((p) => {
     provider = p;
+  });
+
+  onDestroy(() => {
+    unsubProvider();
   });
 
   async function doSearch() {

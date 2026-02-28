@@ -12,6 +12,7 @@ export class JmapProvider extends EmailProvider {
   private _authToken: string;
   private _apiUrl: string;
   private _accountId: string;
+  private _userEmail: string;
 
   constructor() {
     super();
@@ -19,6 +20,7 @@ export class JmapProvider extends EmailProvider {
     this._authToken = import.meta.env.VITE_JMAP_AUTH_TOKEN || localStorage.getItem('jmap_auth_token') || '';
     this._apiUrl = '';
     this._accountId = '';
+    this._userEmail = '';
   }
 
   getInfo(): ProviderInfo {
@@ -50,6 +52,7 @@ export class JmapProvider extends EmailProvider {
       const accountIds = Object.keys(accounts);
       if (accountIds.length === 0) throw new Error('No JMAP accounts found');
       this._accountId = session.primaryAccounts?.[JMAP_MAIL_CAPABILITY] || accountIds[0];
+      this._userEmail = session.username || accounts[this._accountId]?.name || this._accountId;
 
       return true;
     } catch (e) {
@@ -64,7 +67,7 @@ export class JmapProvider extends EmailProvider {
   }
 
   async getUserEmail(): Promise<string> {
-    return this._accountId;
+    return this._userEmail || this._accountId;
   }
 
   async getMailboxes(): Promise<Mailbox[]> {
@@ -131,7 +134,7 @@ export class JmapProvider extends EmailProvider {
       email.body = bodyValues[htmlParts[0].partId].value || '';
     } else if (textParts.length > 0 && bodyValues[textParts[0].partId]) {
       const text = bodyValues[textParts[0].partId].value || '';
-      email.body = `<pre style="white-space:pre-wrap;word-break:break-word">${text}</pre>`;
+      email.body = `<pre style="white-space:pre-wrap;word-break:break-word">${this._escapeHtml(text)}</pre>`;
     }
 
     return email;
@@ -245,7 +248,7 @@ export class JmapProvider extends EmailProvider {
   async sendEmail(data: ComposeData): Promise<boolean> {
     // Create the email as a draft then submit
     const emailBody: any = {
-      from: [{ email: this._accountId }],
+      from: [{ email: this._userEmail || this._accountId }],
       to: data.to.map((addr) => ({ email: addr })),
       subject: data.subject,
       bodyValues: {
@@ -275,7 +278,7 @@ export class JmapProvider extends EmailProvider {
             emailId: '#draft',
           },
         },
-        onSuccessDestroyEmail: ['#submission'],
+        onSuccessDestroyEmail: ['#draft'],
       }, '1'],
     ]);
 
@@ -331,5 +334,14 @@ export class JmapProvider extends EmailProvider {
       throw new Error(`JMAP API error: ${res.status}`);
     }
     return res.json();
+  }
+
+  private _escapeHtml(text: string): string {
+    return text
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
   }
 }

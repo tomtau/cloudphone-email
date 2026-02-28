@@ -1,6 +1,7 @@
 <script>
   import { goto } from '$app/navigation';
   import { base } from '$app/paths';
+  import { onDestroy } from 'svelte';
   import { t } from '$lib/translations';
   import { currentProvider, isLoggedIn, userEmail, mailboxes, loading } from '$lib/email/store';
   import Header from '../../components/Header.svelte';
@@ -12,18 +13,24 @@
   let menuVisible = $state(false);
   let mailboxList = $state([]);
 
-  currentProvider.subscribe((p) => {
+  const unsubProvider = currentProvider.subscribe((p) => {
     provider = p;
   });
 
-  isLoggedIn.subscribe((loggedIn) => {
+  const unsubLoggedIn = isLoggedIn.subscribe((loggedIn) => {
     if (!loggedIn && provider) {
       goto(`${base}/`);
     }
   });
 
-  mailboxes.subscribe((m) => {
+  const unsubMailboxes = mailboxes.subscribe((m) => {
     mailboxList = m;
+  });
+
+  onDestroy(() => {
+    unsubProvider();
+    unsubLoggedIn();
+    unsubMailboxes();
   });
 
   async function loadMailboxes() {

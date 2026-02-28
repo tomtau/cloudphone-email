@@ -2,6 +2,7 @@
   import { goto } from '$app/navigation';
   import { base } from '$app/paths';
   import { page } from '$app/stores';
+  import { onDestroy } from 'svelte';
   import { t } from '$lib/translations';
   import { currentProvider, currentEmail, loading, errorMessage } from '$lib/email/store';
   import Header from '../../components/Header.svelte';
@@ -9,6 +10,7 @@
 
   let provider = null;
   let mode = $state('new');
+  let originalEmailId = $state('');
   let toField = $state('');
   let ccField = $state('');
   let bccField = $state('');
@@ -20,17 +22,17 @@
   let fields = ['to', 'cc', 'bcc', 'subject', 'body'];
   let toInput, ccInput, bccInput, subjectInput, bodyInput;
 
-  currentProvider.subscribe((p) => {
+  const unsubProvider = currentProvider.subscribe((p) => {
     provider = p;
   });
 
-  page.subscribe(async ($page) => {
+  const unsubPage = page.subscribe(async ($page) => {
     mode = $page.url.searchParams.get('mode') || 'new';
-    const emailId = $page.url.searchParams.get('id') || '';
+    originalEmailId = $page.url.searchParams.get('id') || '';
 
-    if ((mode === 'reply' || mode === 'forward') && emailId && provider) {
+    if ((mode === 'reply' || mode === 'forward') && originalEmailId && provider) {
       try {
-        const email = await provider.getEmail(emailId);
+        const email = await provider.getEmail(originalEmailId);
         if (mode === 'reply') {
           toField = email.from;
           subjectField = `Re: ${email.subject.replace(/^Re:\s*/i, '')}`;
@@ -43,6 +45,11 @@
         console.error('Failed to load email for compose', e);
       }
     }
+  });
+
+  onDestroy(() => {
+    unsubProvider();
+    unsubPage();
   });
 
   function stripHtml(html) {
@@ -72,8 +79,8 @@
         bcc: bccField ? bccField.split(',').map((s) => s.trim()).filter(Boolean) : [],
         subject: subjectField,
         body: bodyField,
-        inReplyTo: mode === 'reply' ? '' : undefined,
-        forwardOf: mode === 'forward' ? '' : undefined,
+        inReplyTo: mode === 'reply' ? originalEmailId : undefined,
+        forwardOf: mode === 'forward' ? originalEmailId : undefined,
       });
 
       if (success) {
@@ -136,7 +143,7 @@
     <label for="compose-to">{$t('email.to')}</label>
     <input
       id="compose-to"
-      type="email"
+      type="text"
       bind:value={toField}
       bind:this={toInput}
       placeholder="email@example.com"
@@ -148,7 +155,7 @@
     <label for="compose-cc">{$t('email.cc')}</label>
     <input
       id="compose-cc"
-      type="email"
+      type="text"
       bind:value={ccField}
       bind:this={ccInput}
       placeholder={$t('email.cc')}
@@ -160,7 +167,7 @@
     <label for="compose-bcc">{$t('email.bcc')}</label>
     <input
       id="compose-bcc"
-      type="email"
+      type="text"
       bind:value={bccField}
       bind:this={bccInput}
       placeholder={$t('email.bcc')}

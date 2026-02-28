@@ -116,11 +116,14 @@ export class GmailProvider extends EmailProvider {
     const data = await this._apiGet(`/messages?${params}`);
     const messageIds: any[] = data.messages || [];
 
-    const emails: EmailMessage[] = [];
-    for (const { id } of messageIds) {
-      const msg = await this._apiGet(`/messages/${id}?format=metadata&metadataHeaders=From&metadataHeaders=To&metadataHeaders=Cc&metadataHeaders=Bcc&metadataHeaders=Subject&metadataHeaders=Date`);
-      emails.push(this._parseMessage(msg, mailboxId));
-    }
+    const emails: EmailMessage[] = await Promise.all(
+      messageIds.map(async ({ id }) => {
+        const msg = await this._apiGet(
+          `/messages/${id}?format=metadata&metadataHeaders=From&metadataHeaders=To&metadataHeaders=Cc&metadataHeaders=Bcc&metadataHeaders=Subject&metadataHeaders=Date`,
+        );
+        return this._parseMessage(msg, mailboxId);
+      }),
+    );
 
     return {
       emails,
@@ -173,11 +176,14 @@ export class GmailProvider extends EmailProvider {
     const data = await this._apiGet(`/messages?${params}`);
     const messageIds: any[] = data.messages || [];
 
-    const emails: EmailMessage[] = [];
-    for (const { id } of messageIds) {
-      const msg = await this._apiGet(`/messages/${id}?format=metadata&metadataHeaders=From&metadataHeaders=To&metadataHeaders=Cc&metadataHeaders=Bcc&metadataHeaders=Subject&metadataHeaders=Date`);
-      emails.push(this._parseMessage(msg, ''));
-    }
+    const emails: EmailMessage[] = await Promise.all(
+      messageIds.map(async ({ id }) => {
+        const msg = await this._apiGet(
+          `/messages/${id}?format=metadata&metadataHeaders=From&metadataHeaders=To&metadataHeaders=Cc&metadataHeaders=Bcc&metadataHeaders=Subject&metadataHeaders=Date`,
+        );
+        return this._parseMessage(msg, '');
+      }),
+    );
 
     return {
       emails,
@@ -292,7 +298,7 @@ export class GmailProvider extends EmailProvider {
 
     if (payload.mimeType === 'text/plain' && payload.body?.data) {
       const text = atob(payload.body.data.replace(/-/g, '+').replace(/_/g, '/'));
-      return `<pre style="white-space:pre-wrap;word-break:break-word">${text}</pre>`;
+      return `<pre style="white-space:pre-wrap;word-break:break-word">${this._escapeHtml(text)}</pre>`;
     }
 
     if (payload.parts) {
@@ -332,5 +338,14 @@ export class GmailProvider extends EmailProvider {
       .replace(/\+/g, '-')
       .replace(/\//g, '_')
       .replace(/=+$/, '');
+  }
+
+  private _escapeHtml(text: string): string {
+    return text
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
   }
 }

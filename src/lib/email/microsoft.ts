@@ -165,7 +165,9 @@ export class MicrosoftProvider extends EmailProvider {
   async searchEmails(query: string, options: GetEmailsOptions = {}): Promise<EmailListResult> {
     const { page = 0, pageSize = 10 } = options;
     const skip = page * pageSize;
-    const params = `$top=${pageSize}&$skip=${skip}&$search="${encodeURIComponent(query)}"&$select=id,from,toRecipients,ccRecipients,subject,bodyPreview,isRead,receivedDateTime,hasAttachments`;
+    const escapedQuery = query.replace(/'/g, "''");
+    const filter = `contains(subject,'${escapedQuery}') or contains(bodyPreview,'${escapedQuery}')`;
+    const params = `$top=${pageSize}&$skip=${skip}&$filter=${encodeURIComponent(filter)}&$select=id,from,toRecipients,ccRecipients,subject,bodyPreview,isRead,receivedDateTime,hasAttachments`;
     const data = await this._apiGet(`/messages?${params}`);
     const messages: any[] = data.value || [];
 

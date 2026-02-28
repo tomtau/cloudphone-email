@@ -2,6 +2,7 @@
   import { goto } from '$app/navigation';
   import { base } from '$app/paths';
   import { page } from '$app/stores';
+  import { onDestroy } from 'svelte';
   import { t } from '$lib/translations';
   import { currentProvider, currentEmail, loading } from '$lib/email/store';
   import Header from '../../components/Header.svelte';
@@ -13,19 +14,25 @@
   let email = $state(null);
   let emailId = $state('');
 
-  currentProvider.subscribe((p) => {
+  const unsubProvider = currentProvider.subscribe((p) => {
     provider = p;
   });
 
-  currentEmail.subscribe((e) => {
+  const unsubEmail = currentEmail.subscribe((e) => {
     email = e;
   });
 
-  page.subscribe(($page) => {
+  const unsubPage = page.subscribe(($page) => {
     emailId = $page.url.searchParams.get('id') || '';
     if (emailId) {
       loadEmail();
     }
+  });
+
+  onDestroy(() => {
+    unsubProvider();
+    unsubEmail();
+    unsubPage();
   });
 
   async function loadEmail() {
@@ -113,7 +120,20 @@
   async function moveToTrash() {
     if (!provider || !emailId) return;
     try {
-      await provider.moveEmail(emailId, 'trash');
+      let trashId = 'trash';
+      if (typeof provider.getMailboxes === 'function') {
+        try {
+          const mailboxes = await provider.getMailboxes();
+          const trash = mailboxes.find((m) => {
+            const name = (m.name || '').toLowerCase();
+            return name === 'trash' || name === 'bin' || name === 'deleted items';
+          });
+          if (trash) trashId = trash.id;
+        } catch (e) {
+          console.warn('Could not resolve trash mailbox, using default', e);
+        }
+      }
+      await provider.moveEmail(emailId, trashId);
       history.back();
     } catch (e) {
       console.error('Failed to move email', e);
@@ -132,6 +152,33 @@
     } catch {
       return '';
     }
+  }
+
+  function sanitizeHtml(html) {
+    if (!html) return '';
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, 'text/html');
+    // Remove script tags
+    doc.querySelectorAll('script').forEach((el) => el.remove());
+    // Remove event handler attributes
+    const allElements = doc.body.querySelectorAll('*');
+    for (const el of allElements) {
+      const attrs = [...el.attributes];
+      for (const attr of attrs) {
+        if (attr.name.startsWith('on') || attr.name === 'srcdoc') {
+          el.removeAttribute(attr.name);
+        }
+        // Remove javascript: URLs
+        if (['href', 'src', 'action'].includes(attr.name) && attr.value.trim().toLowerCase().startsWith('javascript:')) {
+          el.removeAttribute(attr.name);
+        }
+      }
+      // Remove dangerous tags
+      if (['object', 'embed', 'iframe', 'form', 'base', 'meta', 'link', 'style'].includes(el.tagName.toLowerCase())) {
+        el.remove();
+      }
+    }
+    return doc.body.innerHTML;
   }
 
   function onKeyDown(e) {
@@ -183,7 +230,7 @@
       {/if}
     </div>
     <div class="email-body">
-      {@html email.body}
+      {@html sanitizeHtml(email.body)}
     </div>
   {:else}
     <p class="loading-text">{$t('email.loading')}</p>

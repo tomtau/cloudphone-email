@@ -1,6 +1,7 @@
 <script>
   import { goto } from '$app/navigation';
   import { base } from '$app/paths';
+  import { onDestroy } from 'svelte';
   import { t } from '$lib/translations';
   import { currentProvider, isLoggedIn, userEmail, loading, errorMessage } from '$lib/email/store';
   import Header from '../../components/Header.svelte';
@@ -10,11 +11,15 @@
   let statusText = $state('');
   let hasError = $state(false);
 
-  currentProvider.subscribe((p) => {
+  const unsubProvider = currentProvider.subscribe((p) => {
     provider = p;
     if (!p) {
       goto(`${base}/`);
     }
+  });
+
+  onDestroy(() => {
+    unsubProvider();
   });
 
   async function doLogin() {
@@ -45,7 +50,7 @@
   function onSoftKeyClick(position) {
     switch (position) {
       case 'center':
-        doLogin();
+        guardedLogin();
         break;
       case 'end':
         goto(`${base}/`);
@@ -53,17 +58,20 @@
     }
   }
 
-  function onKeyDown(e) {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      doLogin();
+  let loginInProgress = false;
+
+  async function guardedLogin() {
+    if (loginInProgress) return;
+    loginInProgress = true;
+    try {
+      await doLogin();
+    } finally {
+      loginInProgress = false;
     }
   }
 </script>
 
 <Header title={$t('email.login')} />
-
-<svelte:window onkeydown={onKeyDown} />
 
 <section id="app">
   {#if provider}
@@ -74,7 +82,7 @@
       {#if statusText}
         <p class="status" class:error={hasError}>{statusText}</p>
       {/if}
-      <button class="login-btn focused" onclick={doLogin}>
+      <button class="login-btn focused" onclick={guardedLogin}>
         {$t('email.login')}
       </button>
     </div>
