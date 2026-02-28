@@ -1,5 +1,5 @@
 <script>
-  import { goto } from '$app/navigation';
+  import { goto, beforeNavigate } from '$app/navigation';
   import { base } from '$app/paths';
   import { t } from '$lib/translations';
   import { getProviders } from '$lib/email/index';
@@ -11,6 +11,13 @@
   const providers = getProviders();
   let focusedIndex = $state(0);
   let menuVisible = $state(false);
+
+  beforeNavigate(({ cancel }) => {
+    if (menuVisible) {
+      cancel();
+      menuVisible = false;
+    }
+  });
 
   function onSoftKeyClick(position) {
     switch (position) {

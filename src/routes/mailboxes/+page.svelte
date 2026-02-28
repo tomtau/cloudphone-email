@@ -1,5 +1,5 @@
 <script>
-  import { goto } from '$app/navigation';
+  import { goto, beforeNavigate } from '$app/navigation';
   import { base } from '$app/paths';
   import { onDestroy } from 'svelte';
   import { t } from '$lib/translations';
@@ -31,6 +31,13 @@
     unsubProvider();
     unsubLoggedIn();
     unsubMailboxes();
+  });
+
+  beforeNavigate(({ cancel }) => {
+    if (menuVisible) {
+      cancel();
+      menuVisible = false;
+    }
   });
 
   async function loadMailboxes() {

@@ -1,5 +1,5 @@
 <script>
-  import { goto } from '$app/navigation';
+  import { goto, beforeNavigate } from '$app/navigation';
   import { base } from '$app/paths';
   import { page } from '$app/stores';
   import { onDestroy } from 'svelte';
@@ -33,6 +33,13 @@
     unsubProvider();
     unsubEmail();
     unsubPage();
+  });
+
+  beforeNavigate(({ cancel }) => {
+    if (menuVisible) {
+      cancel();
+      menuVisible = false;
+    }
   });
 
   async function loadEmail() {
