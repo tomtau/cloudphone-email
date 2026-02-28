@@ -2,7 +2,7 @@
   import { goto } from '$app/navigation';
   import { base } from '$app/paths';
   import { page } from '$app/stores';
-  import { onDestroy } from 'svelte';
+  import { onDestroy, tick } from 'svelte';
   import { t } from '$lib/translations';
   import { currentProvider, currentEmails, loading } from '$lib/email/store';
   import Header from '../../components/Header.svelte';
@@ -14,6 +14,7 @@
   let focusedIndex = $state(0);
   let menuVisible = $state(false);
   let emails = $state([]);
+  let appEl;
   let mailboxId = $state('');
   let mailboxName = $state('');
   let hasMore = $state(false);
@@ -72,7 +73,11 @@
         openEmail(focusedIndex);
         break;
       case 'end':
-        history.back();
+        if (menuVisible) {
+          menuVisible = false;
+        } else {
+          history.back();
+        }
         break;
     }
   }
@@ -102,12 +107,18 @@
         e.preventDefault();
         if (emails.length > 0) {
           focusedIndex = (focusedIndex + 1) % emails.length;
+          tick().then(() => {
+            appEl?.children[focusedIndex]?.scrollIntoView({ block: 'nearest' });
+          });
         }
         break;
       case 'ArrowUp':
         e.preventDefault();
         if (emails.length > 0) {
           focusedIndex = (focusedIndex - 1 + emails.length) % emails.length;
+          tick().then(() => {
+            appEl?.children[focusedIndex]?.scrollIntoView({ block: 'nearest' });
+          });
         }
         break;
       case 'Backspace':
@@ -122,7 +133,7 @@
 
 <svelte:window onkeydown={onKeyDown} />
 
-<section id="app">
+<section id="app" bind:this={appEl}>
   {#if emails.length === 0}
     <p class="empty">{$t('email.noEmails')}</p>
   {:else}
