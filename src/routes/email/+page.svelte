@@ -165,7 +165,7 @@
     for (const el of allElements) {
       const attrs = [...el.attributes];
       for (const attr of attrs) {
-        if (attr.name.startsWith('on') || attr.name === 'srcdoc') {
+        if (attr.name.startsWith('on') || attr.name === 'srcdoc' || attr.name === 'style') {
           el.removeAttribute(attr.name);
         }
         // Remove javascript: URLs
