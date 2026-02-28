@@ -2,7 +2,7 @@
 
 :beginner: This is a beginner guide on [Cloud Phone](https://www.cloudfone.com/) widget development, created using [`sv`](https://github.com/sveltejs/cli) to bootstrap a [SvelteKit](https://svelte.dev/) project.
 
-[https://cloudmosa.github.io/cloudphone-svelte-sample/](https://cloudmosa.github.io/cloudphone-svelte-sample/)
+[https://tomtau.github.io/cloudphone-email/](https://tomtau.github.io/cloudphone-email/)
 
 <p align="center">
   <img alt="Home Screenshot" src="./screenshots/img_20241231_225936306.png" width="240" />

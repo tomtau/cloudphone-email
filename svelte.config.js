@@ -5,10 +5,10 @@ const config = {
 	kit: {
 		// Needed for routing on GitHub Pages
 		adapter: adapter({
-			fallback: 'index.html'
+			fallback: '404.html'
 		}),
 		paths: {
-            base: (process.env.NODE_ENV === 'production') ? '/cloudphone-email' : '',
+            base: process.env.BASE_PATH || '',
         },
 		serviceWorker: {
 			register: false,
