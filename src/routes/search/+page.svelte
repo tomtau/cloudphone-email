@@ -58,10 +58,7 @@
 
   function onKeyDown(e) {
     if (document.activeElement === searchInput) {
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        doSearch();
-      } else if (e.key === 'ArrowDown' && results.length > 0) {
+      if (e.key === 'ArrowDown' && results.length > 0) {
         e.preventDefault();
         searchInput.blur();
         focusedIndex = 0;
@@ -83,12 +80,6 @@
           searchInput?.focus();
         } else {
           focusedIndex = focusedIndex - 1;
-        }
-        break;
-      case 'Enter':
-        e.preventDefault();
-        if (focusedIndex >= 0) {
-          openEmail(focusedIndex);
         }
         break;
       case 'Backspace':

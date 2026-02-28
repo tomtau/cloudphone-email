@@ -108,10 +108,6 @@
           focusedIndex = (focusedIndex - 1 + mailboxList.length) % mailboxList.length;
         }
         break;
-      case 'Enter':
-        e.preventDefault();
-        openMailbox(focusedIndex);
-        break;
       case 'Backspace':
         e.preventDefault();
         history.back();

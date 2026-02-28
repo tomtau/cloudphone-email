@@ -40,7 +40,13 @@
   hidden={!visible}
   aria-hidden={!visible}>
   {#each items as item, index}
-    <a {...item} class:focused={index === focusedIndex} >
+    <a {...item} class:focused={index === focusedIndex} onclick={(e) => {
+      const href = item.href || '';
+      if (href.startsWith('#')) {
+        e.preventDefault();
+        onMenuItemSelected(item);
+      }
+    }}>
       {item.text}
     </a>
   {/each}

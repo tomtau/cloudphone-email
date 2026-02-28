@@ -103,10 +103,6 @@
           focusedIndex = (focusedIndex - 1 + emails.length) % emails.length;
         }
         break;
-      case 'Enter':
-        e.preventDefault();
-        openEmail(focusedIndex);
-        break;
       case 'Backspace':
         e.preventDefault();
         history.back();

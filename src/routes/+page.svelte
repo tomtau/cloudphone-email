@@ -52,10 +52,6 @@
         e.preventDefault();
         focusedIndex = (focusedIndex - 1 + providers.length) % providers.length;
         break;
-      case 'Enter':
-        e.preventDefault();
-        selectProvider(focusedIndex);
-        break;
       case 'Backspace':
         e.preventDefault();
         break;
