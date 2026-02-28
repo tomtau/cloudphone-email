@@ -8,7 +8,7 @@ const config = {
 			fallback: 'index.html'
 		}),
 		paths: {
-            base: (process.env.NODE_ENV === 'production') ? '/cloudphone-svelte-sample' : '',
+            base: (process.env.NODE_ENV === 'production') ? '/cloudphone-email' : '',
         },
 		serviceWorker: {
 			register: false,
