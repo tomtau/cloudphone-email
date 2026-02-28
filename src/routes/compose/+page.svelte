@@ -271,7 +271,6 @@
 
     textarea {
       min-height: 40px;
-      rows: 4;
     }
   }
 </style>

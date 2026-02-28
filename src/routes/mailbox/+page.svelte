@@ -138,7 +138,7 @@
   items={[
     { href: '#compose', text: $t('email.compose'), action: 'compose' },
     { href: '#search', text: $t('email.search'), action: 'search' },
-    { href: '#refresh', text: 'Refresh', action: 'refresh' },
+    { href: '#refresh', text: $t('email.refresh'), action: 'refresh' },
   ]} />
 
 <SoftKeyBar

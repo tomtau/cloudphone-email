@@ -143,7 +143,7 @@
   items={[
     { href: '#compose', text: $t('email.compose'), action: 'compose' },
     { href: '#search', text: $t('email.search'), action: 'search' },
-    { href: '#refresh', text: 'Refresh', action: 'refresh' },
+    { href: '#refresh', text: $t('email.refresh'), action: 'refresh' },
     { href: '#logout', text: $t('email.logout'), action: 'logout' },
     { href: `${base}/settings`, text: $t('common.settings') },
   ]} />

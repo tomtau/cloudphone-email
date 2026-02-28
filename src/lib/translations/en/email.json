@@ -41,5 +41,6 @@
     "demo": "Demo",
     "demoDesc": "Try with demo data",
     "configNeeded": "Client ID required",
-    "comingSoon": "Coming soon"
+    "comingSoon": "Coming soon",
+    "refresh": "Refresh"
 }
