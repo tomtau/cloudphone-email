@@ -16,7 +16,7 @@ export class GmailProvider extends EmailProvider {
 
   constructor(clientId = '') {
     super();
-    this._clientId = clientId || localStorage.getItem('gmail_client_id') || '';
+    this._clientId = clientId || import.meta.env.VITE_GMAIL_CLIENT_ID || localStorage.getItem('gmail_client_id') || '';
     this._accessToken = localStorage.getItem('gmail_access_token') || '';
     this._userEmail = localStorage.getItem('gmail_user_email') || '';
   }
@@ -35,7 +35,7 @@ export class GmailProvider extends EmailProvider {
 
   async login(): Promise<boolean> {
     if (!this._clientId) {
-      throw new Error('Gmail Client ID is not configured. Set it in Settings.');
+      throw new Error('Gmail Client ID is not configured. Set VITE_GMAIL_CLIENT_ID env variable at build time.');
     }
 
     await this._loadGoogleIdentityServices();

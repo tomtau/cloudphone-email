@@ -17,7 +17,7 @@ export class MicrosoftProvider extends EmailProvider {
 
   constructor(clientId = '') {
     super();
-    this._clientId = clientId || localStorage.getItem('microsoft_client_id') || '';
+    this._clientId = clientId || import.meta.env.VITE_MICROSOFT_CLIENT_ID || localStorage.getItem('microsoft_client_id') || '';
     this._accessToken = localStorage.getItem('microsoft_access_token') || '';
     this._userEmail = localStorage.getItem('microsoft_user_email') || '';
     this._msalInstance = null;
@@ -37,7 +37,7 @@ export class MicrosoftProvider extends EmailProvider {
 
   async login(): Promise<boolean> {
     if (!this._clientId) {
-      throw new Error('Microsoft Client ID is not configured. Set it in Settings.');
+      throw new Error('Microsoft Client ID is not configured. Set VITE_MICROSOFT_CLIENT_ID env variable at build time.');
     }
 
     await this._initMsal();

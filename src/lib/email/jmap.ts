@@ -15,8 +15,8 @@ export class JmapProvider extends EmailProvider {
 
   constructor() {
     super();
-    this._sessionUrl = localStorage.getItem('jmap_session_url') || '';
-    this._authToken = localStorage.getItem('jmap_auth_token') || '';
+    this._sessionUrl = import.meta.env.VITE_JMAP_SESSION_URL || localStorage.getItem('jmap_session_url') || '';
+    this._authToken = import.meta.env.VITE_JMAP_AUTH_TOKEN || localStorage.getItem('jmap_auth_token') || '';
     this._apiUrl = '';
     this._accountId = '';
   }
@@ -35,7 +35,7 @@ export class JmapProvider extends EmailProvider {
 
   async login(): Promise<boolean> {
     if (!this._sessionUrl || !this._authToken) {
-      throw new Error('JMAP session URL and auth token are required. Set them in Settings.');
+      throw new Error('JMAP session URL and auth token are required. Set VITE_JMAP_SESSION_URL and VITE_JMAP_AUTH_TOKEN env variables at build time.');
     }
 
     try {
