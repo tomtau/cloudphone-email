@@ -2,7 +2,7 @@
   import { goto } from '$app/navigation';
   import { base } from '$app/paths';
   import { t } from '$lib/translations';
-  import { currentProvider, isLoggedIn, userEmail, mailboxes, loading } from '$lib/email/store.js';
+  import { currentProvider, isLoggedIn, userEmail, mailboxes, loading } from '$lib/email/store';
   import Header from '../../components/Header.svelte';
   import OptionsMenu from '../../components/OptionsMenu.svelte';
   import SoftKeyBar from '../../components/SoftKeyBar.svelte';

@@ -42,5 +42,13 @@
     "demoDesc": "Probar con datos de demo",
     "configNeeded": "Se requiere ID de cliente",
     "comingSoon": "Próximamente",
-    "refresh": "Actualizar"
+    "refresh": "Actualizar",
+    "cc": "CC",
+    "bcc": "CCO",
+    "delete": "Eliminar",
+    "moveTo": "Mover a...",
+    "markUnread": "Marcar no leído",
+    "moveSuccess": "Correo movido",
+    "deleteSuccess": "Correo eliminado",
+    "confirmDelete": "¿Eliminar este correo?"
 }

@@ -3,20 +3,22 @@
   import { base } from '$app/paths';
   import { page } from '$app/stores';
   import { t } from '$lib/translations';
-  import { currentProvider, currentEmail, loading, errorMessage } from '$lib/email/store.js';
+  import { currentProvider, currentEmail, loading, errorMessage } from '$lib/email/store';
   import Header from '../../components/Header.svelte';
   import SoftKeyBar from '../../components/SoftKeyBar.svelte';
 
   let provider = null;
   let mode = $state('new');
   let toField = $state('');
+  let ccField = $state('');
+  let bccField = $state('');
   let subjectField = $state('');
   let bodyField = $state('');
   let statusText = $state('');
   let hasError = $state(false);
   let focusedField = $state(0);
-  let fields = ['to', 'subject', 'body'];
-  let toInput, subjectInput, bodyInput;
+  let fields = ['to', 'cc', 'bcc', 'subject', 'body'];
+  let toInput, ccInput, bccInput, subjectInput, bodyInput;
 
   currentProvider.subscribe((p) => {
     provider = p;
@@ -66,6 +68,8 @@
     try {
       const success = await provider.sendEmail({
         to: toField.split(',').map((s) => s.trim()).filter(Boolean),
+        cc: ccField ? ccField.split(',').map((s) => s.trim()).filter(Boolean) : [],
+        bcc: bccField ? bccField.split(',').map((s) => s.trim()).filter(Boolean) : [],
         subject: subjectField,
         body: bodyField,
         inReplyTo: mode === 'reply' ? '' : undefined,
@@ -102,8 +106,10 @@
     focusedField = index;
     switch (index) {
       case 0: toInput?.focus(); break;
-      case 1: subjectInput?.focus(); break;
-      case 2: bodyInput?.focus(); break;
+      case 1: ccInput?.focus(); break;
+      case 2: bccInput?.focus(); break;
+      case 3: subjectInput?.focus(); break;
+      case 4: bodyInput?.focus(); break;
     }
   }
 
@@ -139,6 +145,30 @@
   </div>
 
   <div class="form-group" class:focused={focusedField === 1}>
+    <label for="compose-cc">{$t('email.cc')}</label>
+    <input
+      id="compose-cc"
+      type="email"
+      bind:value={ccField}
+      bind:this={ccInput}
+      placeholder={$t('email.cc')}
+      onfocus={() => focusedField = 1}
+    />
+  </div>
+
+  <div class="form-group" class:focused={focusedField === 2}>
+    <label for="compose-bcc">{$t('email.bcc')}</label>
+    <input
+      id="compose-bcc"
+      type="email"
+      bind:value={bccField}
+      bind:this={bccInput}
+      placeholder={$t('email.bcc')}
+      onfocus={() => focusedField = 2}
+    />
+  </div>
+
+  <div class="form-group" class:focused={focusedField === 3}>
     <label for="compose-subject">{$t('email.subject')}</label>
     <input
       id="compose-subject"
@@ -146,11 +176,11 @@
       bind:value={subjectField}
       bind:this={subjectInput}
       placeholder={$t('email.subject')}
-      onfocus={() => focusedField = 1}
+      onfocus={() => focusedField = 3}
     />
   </div>
 
-  <div class="form-group" class:focused={focusedField === 2}>
+  <div class="form-group" class:focused={focusedField === 4}>
     <label for="compose-body">{$t('email.body')}</label>
     <textarea
       id="compose-body"
@@ -158,7 +188,7 @@
       bind:this={bodyInput}
       placeholder={$t('email.body')}
       rows="6"
-      onfocus={() => focusedField = 2}
+      onfocus={() => focusedField = 4}
     ></textarea>
   </div>
 

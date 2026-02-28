@@ -2,7 +2,7 @@
   import { goto } from '$app/navigation';
   import { base } from '$app/paths';
   import { t } from '$lib/translations';
-  import { currentProvider, loading } from '$lib/email/store.js';
+  import { currentProvider, loading } from '$lib/email/store';
   import Header from '../../components/Header.svelte';
   import SoftKeyBar from '../../components/SoftKeyBar.svelte';
   import EmailItem from '../../components/EmailItem.svelte';

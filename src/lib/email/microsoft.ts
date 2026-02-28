@@ -1,17 +1,20 @@
-import { EmailProvider } from './provider.js';
+import { EmailProvider } from './provider';
+import type { EmailMessage, ComposeData, ProviderInfo, Mailbox, GetEmailsOptions, EmailListResult } from './provider';
+
+declare const msal: any;
 
 const GRAPH_API_BASE = 'https://graph.microsoft.com/v1.0/me';
 const SCOPES = ['Mail.ReadWrite', 'Mail.Send', 'User.Read'];
 
 /**
  * Microsoft Outlook/Hotmail provider using MSAL.js and Microsoft Graph API.
- *
- * Requires an Azure AD App Registration with a Client ID configured
- * for a Single Page Application (SPA) with the appropriate redirect URIs.
- *
- * Set the client ID via the constructor or localStorage key 'microsoft_client_id'.
  */
 export class MicrosoftProvider extends EmailProvider {
+  private _clientId: string;
+  private _accessToken: string;
+  private _userEmail: string;
+  private _msalInstance: any;
+
   constructor(clientId = '') {
     super();
     this._clientId = clientId || localStorage.getItem('microsoft_client_id') || '';
@@ -20,7 +23,7 @@ export class MicrosoftProvider extends EmailProvider {
     this._msalInstance = null;
   }
 
-  getInfo() {
+  getInfo(): ProviderInfo {
     return {
       id: 'microsoft',
       name: 'Outlook',
@@ -28,11 +31,11 @@ export class MicrosoftProvider extends EmailProvider {
     };
   }
 
-  async isLoggedIn() {
+  async isLoggedIn(): Promise<boolean> {
     return !!this._accessToken;
   }
 
-  async login() {
+  async login(): Promise<boolean> {
     if (!this._clientId) {
       throw new Error('Microsoft Client ID is not configured. Set it in Settings.');
     }
@@ -65,7 +68,7 @@ export class MicrosoftProvider extends EmailProvider {
     }
   }
 
-  async logout() {
+  async logout(): Promise<void> {
     this._accessToken = '';
     this._userEmail = '';
     localStorage.removeItem('microsoft_access_token');
@@ -80,12 +83,12 @@ export class MicrosoftProvider extends EmailProvider {
     }
   }
 
-  async getUserEmail() {
+  async getUserEmail(): Promise<string> {
     return this._userEmail;
   }
 
-  async getMailboxes() {
-    const folderMap = {
+  async getMailboxes(): Promise<Mailbox[]> {
+    const folderMap: Record<string, string> = {
       inbox: 'Inbox',
       sentitems: 'Sent',
       drafts: 'Drafts',
@@ -93,7 +96,7 @@ export class MicrosoftProvider extends EmailProvider {
       deleteditems: 'Trash',
     };
 
-    const mailboxes = [];
+    const mailboxes: Mailbox[] = [];
     for (const [folderId, name] of Object.entries(folderMap)) {
       try {
         const data = await this._apiGet(`/mailFolders/${folderId}`);
@@ -111,26 +114,28 @@ export class MicrosoftProvider extends EmailProvider {
     return mailboxes;
   }
 
-  async getEmails(mailboxId, options = {}) {
+  async getEmails(mailboxId: string, options: GetEmailsOptions = {}): Promise<EmailListResult> {
     const { page = 0, pageSize = 10 } = options;
     const skip = page * pageSize;
-    const params = `$top=${pageSize}&$skip=${skip}&$orderby=receivedDateTime desc&$select=id,from,toRecipients,subject,bodyPreview,isRead,receivedDateTime,hasAttachments`;
+    const params = `$top=${pageSize}&$skip=${skip}&$orderby=receivedDateTime desc&$select=id,from,toRecipients,ccRecipients,bccRecipients,subject,bodyPreview,isRead,receivedDateTime,hasAttachments`;
     const data = await this._apiGet(`/mailFolders/${mailboxId}/messages?${params}`);
-    const messages = data.value || [];
+    const messages: any[] = data.value || [];
 
     return {
-      emails: messages.map((msg) => this._parseMessage(msg, mailboxId)),
+      emails: messages.map((msg: any) => this._parseMessage(msg, mailboxId)),
       hasMore: !!data['@odata.nextLink'],
     };
   }
 
-  async getEmail(emailId) {
+  async getEmail(emailId: string): Promise<EmailMessage> {
     const msg = await this._apiGet(`/messages/${emailId}`);
     return {
       id: msg.id,
       from: msg.from?.emailAddress?.address || '',
       fromName: msg.from?.emailAddress?.name || '',
-      to: (msg.toRecipients || []).map((r) => r.emailAddress?.address || ''),
+      to: (msg.toRecipients || []).map((r: any) => r.emailAddress?.address || ''),
+      cc: (msg.ccRecipients || []).map((r: any) => r.emailAddress?.address || ''),
+      bcc: (msg.bccRecipients || []).map((r: any) => r.emailAddress?.address || ''),
       subject: msg.subject || '(No Subject)',
       snippet: msg.bodyPreview || '',
       body: msg.body?.content || '',
@@ -141,25 +146,37 @@ export class MicrosoftProvider extends EmailProvider {
     };
   }
 
-  async markAsRead(emailId) {
+  async markAsRead(emailId: string): Promise<void> {
     await this._apiPatch(`/messages/${emailId}`, { isRead: true });
   }
 
-  async searchEmails(query, options = {}) {
+  async markAsUnread(emailId: string): Promise<void> {
+    await this._apiPatch(`/messages/${emailId}`, { isRead: false });
+  }
+
+  async moveEmail(emailId: string, targetMailboxId: string): Promise<void> {
+    await this._apiPost(`/messages/${emailId}/move`, { destinationId: targetMailboxId });
+  }
+
+  async deleteEmail(emailId: string): Promise<void> {
+    await this._apiPost(`/messages/${emailId}/move`, { destinationId: 'deleteditems' });
+  }
+
+  async searchEmails(query: string, options: GetEmailsOptions = {}): Promise<EmailListResult> {
     const { page = 0, pageSize = 10 } = options;
     const skip = page * pageSize;
-    const params = `$top=${pageSize}&$skip=${skip}&$search="${encodeURIComponent(query)}"&$select=id,from,toRecipients,subject,bodyPreview,isRead,receivedDateTime,hasAttachments`;
+    const params = `$top=${pageSize}&$skip=${skip}&$search="${encodeURIComponent(query)}"&$select=id,from,toRecipients,ccRecipients,subject,bodyPreview,isRead,receivedDateTime,hasAttachments`;
     const data = await this._apiGet(`/messages?${params}`);
-    const messages = data.value || [];
+    const messages: any[] = data.value || [];
 
     return {
-      emails: messages.map((msg) => this._parseMessage(msg, '')),
+      emails: messages.map((msg: any) => this._parseMessage(msg, '')),
       hasMore: !!data['@odata.nextLink'],
     };
   }
 
-  async sendEmail(data) {
-    const message = {
+  async sendEmail(data: ComposeData): Promise<boolean> {
+    const message: any = {
       subject: data.subject,
       body: {
         contentType: 'Text',
@@ -170,13 +187,25 @@ export class MicrosoftProvider extends EmailProvider {
       })),
     };
 
+    if (data.cc && data.cc.length > 0) {
+      message.ccRecipients = data.cc.map((addr) => ({
+        emailAddress: { address: addr },
+      }));
+    }
+
+    if (data.bcc && data.bcc.length > 0) {
+      message.bccRecipients = data.bcc.map((addr) => ({
+        emailAddress: { address: addr },
+      }));
+    }
+
     await this._apiPost('/sendMail', { message, saveToSentItems: true });
     return true;
   }
 
   // --- Private helpers ---
 
-  async _initMsal() {
+  private async _initMsal(): Promise<void> {
     if (this._msalInstance) return;
 
     await this._loadMsalScript();
@@ -194,19 +223,19 @@ export class MicrosoftProvider extends EmailProvider {
     await this._msalInstance.initialize();
   }
 
-  async _loadMsalScript() {
+  private async _loadMsalScript(): Promise<void> {
     if (typeof msal !== 'undefined') return;
 
     return new Promise((resolve, reject) => {
       const script = document.createElement('script');
       script.src = 'https://alcdn.msauth.net/browser/2.38.0/js/msal-browser.min.js';
-      script.onload = resolve;
+      script.onload = () => resolve();
       script.onerror = () => reject(new Error('Failed to load MSAL library'));
       document.head.appendChild(script);
     });
   }
 
-  async _fetchUserProfile() {
+  private async _fetchUserProfile(): Promise<void> {
     try {
       const data = await this._apiGet('');
       this._userEmail = data.mail || data.userPrincipalName || '';
@@ -216,7 +245,7 @@ export class MicrosoftProvider extends EmailProvider {
     }
   }
 
-  async _apiGet(path) {
+  private async _apiGet(path: string): Promise<any> {
     const url = path.startsWith('http') ? path : `${GRAPH_API_BASE}${path}`;
     const res = await fetch(url, {
       headers: { Authorization: `Bearer ${this._accessToken}` },
@@ -232,7 +261,7 @@ export class MicrosoftProvider extends EmailProvider {
     return res.json();
   }
 
-  async _apiPost(path, body) {
+  private async _apiPost(path: string, body: any): Promise<any> {
     const res = await fetch(`${GRAPH_API_BASE}${path}`, {
       method: 'POST',
       headers: {
@@ -248,7 +277,7 @@ export class MicrosoftProvider extends EmailProvider {
     return res.json();
   }
 
-  async _apiPatch(path, body) {
+  private async _apiPatch(path: string, body: any): Promise<any> {
     const res = await fetch(`${GRAPH_API_BASE}${path}`, {
       method: 'PATCH',
       headers: {
@@ -264,12 +293,14 @@ export class MicrosoftProvider extends EmailProvider {
     return res.json();
   }
 
-  _parseMessage(msg, mailboxId) {
+  private _parseMessage(msg: any, mailboxId: string): EmailMessage {
     return {
       id: msg.id,
       from: msg.from?.emailAddress?.address || '',
       fromName: msg.from?.emailAddress?.name || '',
-      to: (msg.toRecipients || []).map((r) => r.emailAddress?.address || ''),
+      to: (msg.toRecipients || []).map((r: any) => r.emailAddress?.address || ''),
+      cc: (msg.ccRecipients || []).map((r: any) => r.emailAddress?.address || ''),
+      bcc: [],
       subject: msg.subject || '(No Subject)',
       snippet: msg.bodyPreview || '',
       body: '',

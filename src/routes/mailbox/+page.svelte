@@ -3,7 +3,7 @@
   import { base } from '$app/paths';
   import { page } from '$app/stores';
   import { t } from '$lib/translations';
-  import { currentProvider, currentEmails, loading } from '$lib/email/store.js';
+  import { currentProvider, currentEmails, loading } from '$lib/email/store';
   import Header from '../../components/Header.svelte';
   import OptionsMenu from '../../components/OptionsMenu.svelte';
   import SoftKeyBar from '../../components/SoftKeyBar.svelte';

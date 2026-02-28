@@ -3,7 +3,7 @@
   import { base } from '$app/paths';
   import { page } from '$app/stores';
   import { t } from '$lib/translations';
-  import { currentProvider, currentEmail, loading } from '$lib/email/store.js';
+  import { currentProvider, currentEmail, loading } from '$lib/email/store';
   import Header from '../../components/Header.svelte';
   import OptionsMenu from '../../components/OptionsMenu.svelte';
   import SoftKeyBar from '../../components/SoftKeyBar.svelte';
@@ -65,6 +65,12 @@
       goto(`${base}/compose?mode=forward&id=${encodeURIComponent(emailId)}`);
     } else if (item.action === 'markRead') {
       markRead();
+    } else if (item.action === 'markUnread') {
+      markUnread();
+    } else if (item.action === 'delete') {
+      deleteEmail();
+    } else if (item.action === 'moveTo') {
+      moveToTrash();
     }
   }
 
@@ -78,6 +84,39 @@
       }
     } catch (e) {
       console.error('Failed to mark as read', e);
+    }
+  }
+
+  async function markUnread() {
+    if (!provider || !emailId) return;
+    try {
+      await provider.markAsUnread(emailId);
+      if (email) {
+        email.isRead = false;
+        currentEmail.set(email);
+      }
+    } catch (e) {
+      console.error('Failed to mark as unread', e);
+    }
+  }
+
+  async function deleteEmail() {
+    if (!provider || !emailId) return;
+    try {
+      await provider.deleteEmail(emailId);
+      history.back();
+    } catch (e) {
+      console.error('Failed to delete email', e);
+    }
+  }
+
+  async function moveToTrash() {
+    if (!provider || !emailId) return;
+    try {
+      await provider.moveEmail(emailId, 'trash');
+      history.back();
+    } catch (e) {
+      console.error('Failed to move email', e);
     }
   }
 
@@ -126,6 +165,12 @@
         <span class="label">{$t('email.to')}:</span>
         <span class="value">{email.to.join(', ')}</span>
       </div>
+      {#if email.cc && email.cc.length > 0}
+        <div class="meta-row">
+          <span class="label">{$t('email.cc')}:</span>
+          <span class="value">{email.cc.join(', ')}</span>
+        </div>
+      {/if}
       <div class="meta-row">
         <span class="label">{$t('email.date')}:</span>
         <span class="value">{formatDate(email.date)}</span>
@@ -152,6 +197,9 @@
     { href: '#reply', text: $t('email.reply'), action: 'reply' },
     { href: '#forward', text: $t('email.forward'), action: 'forward' },
     { href: '#markRead', text: $t('email.markRead'), action: 'markRead' },
+    { href: '#markUnread', text: $t('email.markUnread'), action: 'markUnread' },
+    { href: '#delete', text: $t('email.delete'), action: 'delete' },
+    { href: '#moveTo', text: $t('email.moveTo'), action: 'moveTo' },
   ]} />
 
 <SoftKeyBar
